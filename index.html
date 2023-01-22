@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Destroy cubes!</title>
+    <meta name="description" content="Destroy cubes!" />
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <!-- <script src="https://rawgit.com/dmarcos/aframe-motion-capture/master/dist/aframe-motion-capture-components.min.js"></script>-->
+    <script src="https://unpkg.com/aframe-controller-cursor-component@0.2.3/dist/aframe-controller-cursor-component.min.js"></script>
+    <script src="js/aframe-environment-component.js"></script>
+    <script src="js/controller-listener.js"></script>
+    <script src="js/player-move.js"></script>
+    <script src="js/raycaster-extras.js"></script>
+    <script>
+      var remove = 0;
+      AFRAME.registerComponent("scene", {
+        init: function () {
+          var scene = document.querySelector("a-scene");
+          for (var i = 0; i < 50; i++) {
+            var box = document.createElement("a-box");
+            box.setAttribute("color", "#EF2D5E");
+            box.setAttribute("position", {
+              x: Math.random() * 10 - 5,
+              y: Math.random() * 20 - 1,
+              z: Math.random() * -10 - 10,
+            });
+            box.setAttribute("handle-events", "");
+            box.setAttribute("raycaster-target", "");
+            scene.appendChild(box);
+          }
+        },
+      });
+      AFRAME.registerComponent("handle-events", {
+        init: function () {
+          var el = this.el; // <a-box>
+          el.addEventListener("mouseenter", function () {
+            el.setAttribute("color", "#24CAFF");
+          });
+          el.addEventListener("mouseleave", function () {
+            el.setAttribute("color", "#EF2D5E");
+          });
+          el.addEventListener("click", function () {
+            el.removeFromParent();
+          });
+          el.addEventListener("gripdown", function () {
+            el.removeFromParent("gripdown");
+          });
+
+          document
+            .querySelector("a-scene")
+            .addEventListener("enter-vr", function () {
+              if (remove == 0) {
+                document.querySelector("a-cursor").removeFromParent();
+                remove = 1;
+              }
+            });
+
+          document
+            .querySelector("a-scene")
+            .addEventListener("exit-vr", function () {
+              if (remove == 1) {
+                var cursor = document.createElement("a-cursor");
+                cursor.setAttribute("id", "cursor");
+                document.querySelector("a-camera").appendChild(cursor);
+                remove = 0;
+              }
+            });
+        },
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene scene>
+      <a-entity
+        id="player"
+        position="0 0 0"
+        player-move="controllerListenerId: #controller-data;
+                     navigationMeshClass: groundPlane;"
+      >
+        <a-camera>
+          <a-cursor id="cursor"></a-cursor>
+        </a-camera>
+        <a-entity
+          id="controller-data"
+          controller-listener="leftControllerId:  #left-controller; 
+                                 rightControllerId: #right-controller;"
+        >
+        </a-entity>
+
+        <a-entity id="left-controller" oculus-touch-controls="hand: left">
+        </a-entity>
+
+        <!-- experiment with raycasting interval; slight performance improvement but jittery appearance in world -->
+        <a-entity
+          id="right-controller"
+          oculus-touch-controls="hand: right"
+          raycaster="objects: .raycaster-target; interval: 0;"
+          raycaster-extras="controllerListenerId: #controller-data; 
+                              beamImageSrc: #gradient; beamLength: 0.5;"
+        >
+        </a-entity>
+      </a-entity>
+
+      <a-sky
+        src="https://cdn.glitch.me/a3271e09-82a1-4705-ae47-41b7c872374f/belfast_sunset.jpg?v=1668671410318"
+      ></a-sky>
+      <!-- use a simple mesh for raycasting/navigation -->
+      <a-plane
+        width="100"
+        height="100"
+        rotation="-90 0 0"
+        position="0 0.01 0"
+        visible="false"
+        class="groundPlane"
+        raycaster-target
+      >
+      </a-plane>
+    </a-scene>
+  </body>
+</html>
